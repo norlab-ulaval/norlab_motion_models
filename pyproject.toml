@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+
+name='norlab_motion_models'
+version = "0.0.1"
+authors = [
+  { name="Nicolas Samson", email="nicolas.samson.3@ulaval.ca" },
+]
+description = "Norlab motion model libraries"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "BSD-3-Clause"
+license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "scipy",
+    "PyYAML",
+    "casadi==3.6.5",
+]
+
+
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+testpaths = [
+    "tests",
+]
+
+[project.urls]
+Homepage = "https://github.com/norlab-ulaval/norlab_motion_models"
+Issues = "https://github.com/norlab-ulaval/norlab_motion_models/issues"
+

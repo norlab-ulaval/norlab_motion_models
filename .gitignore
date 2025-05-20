@@ -172,3 +172,16 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+# VS Code settings
+.vscode/
+# VS Code extensions
+.vscode-test/
+# VS Code workspace settings
+.vscode-workspace/
+
+# .python-version
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
+.python-version
