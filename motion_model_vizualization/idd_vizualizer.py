@@ -23,7 +23,7 @@ with open("motion_model_vizualization/IDD_2D_params.yaml", "r") as f:
 # Initialize the robot model with parameters from YAML
 robot = IdealDiffDrive2D(params["robot_params"])
 # Initial state and command
-x_init = np.array([[0.0, 0.0, 0.0]*robot.nb_group_state]).T
+x_init = np.array([[0.0, 0.0, 0.0,0.0,0.0,0.0]*robot.nb_group_state]).T
 u_init = np.zeros(robot.input_dim)  # Use robot's input dimension
 x_current = x_init.copy()
 trajectory = x_current.copy()
@@ -54,7 +54,7 @@ def draw_frame(ax, x, length=LENGTH):
     if hasattr(draw_frame, 'rect'):
         draw_frame.rect.remove()
     origin = x[:2]
-    theta = x[2]
+    theta = x[5]
     print(x)
     x_axis = length * np.array([np.cos(theta), np.sin(theta)])
     y_axis = length * np.array([-np.sin(theta), np.cos(theta)])
@@ -111,7 +111,7 @@ def on_key(event):
         for i in range(robot.nb_group_state):
             trajectory_line = trajectory_line_group[i]
             trajectory_points = trajectory_point_group[i]
-            traj_arr = trajectory[3*i:3*i+2, :]
+            traj_arr = trajectory[6*i:6*i+2, :]
             #
         trajectory_line.set_data(traj_arr[0,:], traj_arr[1,:])
         trajectory_points.set_data(traj_arr[0, :], traj_arr[1,:])
@@ -126,8 +126,8 @@ print(traj_arr)
 for i in range(robot.nb_group_state):
     trajectory_line = trajectory_line_group[i]
     trajectory_points = trajectory_point_group[i]
-    trajectory_line.set_data(traj_arr[3*i, :], traj_arr[3*i+1, :])
-    trajectory_points.set_data(traj_arr[3*i, :], traj_arr[3*i+1, :])
+    trajectory_line.set_data(traj_arr[6*i, :], traj_arr[6*i+1, :])
+    trajectory_points.set_data(traj_arr[6*i, :], traj_arr[6*i+1, :])
 
 draw_frame(ax, x_current)
 

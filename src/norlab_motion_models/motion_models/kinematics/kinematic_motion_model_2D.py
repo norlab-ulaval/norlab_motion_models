@@ -41,7 +41,8 @@ class KinematicMotionModel(MotionModel):
         if initial_state.shape[0] != self.state_dim:
             raise ValueError("Initial state dimension does not match the state dimension of the model.")
         
-        if speed_state.shape[0] != 3:
+        
+        if speed_state.shape[0] != 6:
             raise ValueError("Control input dimension does not match the control dimension of the model.")
 
         #if dt.shape[0] != 1 or dt.shape[1] != self.speed_state.shape[1]:
@@ -50,32 +51,39 @@ class KinematicMotionModel(MotionModel):
     
         group_transform_i = []
         for group in range(self.nb_group_state):
-            group_transform_i.append(np.array([[np.cos(initial_state[3*group+2, 0]), -np.sin(initial_state[3*group+2, 0]), initial_state[3*group,0]],
-                                                [np.sin(initial_state[3*group+2, 0]), np.cos(initial_state[3*group+2, 0]), initial_state[3*group+1,0]],
-                                                [0, 0, 1]]))
+            rotation= R.from_euler('z', initial_state[6*group+5, 0], degrees=False)
+            transform = np.eye(4)
+            transform[:3, :3] = rotation.as_matrix()
+            transform[:3, 3] = initial_state[6*group:6*group+3, 0]
+            #transform_i = np.eye(3)
+            group_transform_i.append(transform)
         #transform_i = np.eye(3)
         # Compute the position in the initial state frame
 
-        predicted_state = np.zeros((3*self.nb_group_state,dt.shape[0]))  
+        predicted_state = np.zeros((6*self.nb_group_state,dt.shape[0]))  
         
         for i in range(speed_state.shape[1]):
             
             for state_group in range(self.nb_group_state):
                 transform_i = group_transform_i[state_group]
-                group_speed_state = speed_state[state_group*3:3*(state_group+1),i]  #initial_state[3*state_group:3*(state_group+1), 0]
+                group_speed_state = speed_state[state_group*6:6*(state_group+1),i]  #initial_state[3*state_group:3*(state_group+1), 0]
                 # Compute the change in state using the Jacobian
                 delta_state = group_speed_state * dt
-                delta_lin = np.array([delta_state[0], delta_state[1], 1]).T
-                transform = np.array([[np.cos(delta_state[2]), -np.sin(delta_state[2]),0],
-                                      [np.sin(delta_state[2]), np.cos(delta_state[2]), 0],
-                                      [0, 0, 1]])
+                delta_lin = np.array([delta_state[0], delta_state[1],delta_state[2], 1]).T
+                
+                rotation= R.from_euler('z', delta_state[5], degrees=False)
+                transform = np.eye(4)
+                transform[:3, :3] = rotation.as_matrix()
+                angles = rotation.as_euler('xyz', degrees=False)
+                print(angles)
+                predicted_state[6*state_group+3:6*(state_group+1),i] = angles
+                predicted_state[6*state_group:6*(state_group+1)-3,i] = np.squeeze(transform_i @ delta_lin)[:3] # Add positions
 
-                predicted_state[3*state_group:3*(state_group+1),i] = np.squeeze(transform_i @ delta_lin)
                 transform_i = transform_i @ transform
                 theta = np.arctan2(transform_i[1, i], transform_i[0, i])
                 
                 group_transform_i[state_group] = transform_i
-                predicted_state[3*state_group+2, i] = theta 
+                predicted_state[6*state_group+5, i] = theta 
 
         return predicted_state
 

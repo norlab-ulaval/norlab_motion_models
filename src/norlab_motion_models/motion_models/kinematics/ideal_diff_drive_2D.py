@@ -10,7 +10,7 @@ class IdealDiffDrive2D(KinematicMotionModel):
 
         super().__init__()
         self.name = "IdealDiffDrive2D"
-        self.state_dim = 3  # [x, y, theta]
+        self.state_dim = 6  # [x, y, theta]
         self.input_dim = 2  # [w_l, w_r] (left and right wheel speeds)
         self.control_input_frame = "joints"  # Control inputs are in the joint space (wheel speeds)
         
@@ -94,13 +94,16 @@ class IdealDiffDrive2D(KinematicMotionModel):
         self._effective_wheel_radius = self._wheel_radius * self._wheel_radius_gain
 
         j_2x2 =  self._effective_wheel_radius * np.array([[1/2, 1/2],
-                           [-1/(self._effective_basewidth), 1/(self._effective_basewidth)]])
+                        [-1/(self._effective_basewidth), 1/(self._effective_basewidth)]])
         j_2x2_inv = np.linalg.inv(j_2x2)
         self._jacobian = np.array([[j_2x2[0,0],j_2x2[0,1]],
-                            [0,0],
-                            [j_2x2[1,0],j_2x2[1,1]]])
-        self._jacobian_inv = np.array([[j_2x2_inv[0,0],0, j_2x2_inv[0,1]],
-                               [j_2x2_inv[1,0],0, j_2x2_inv[1,1]]])
+                            [0,0], #y
+                            [0,0], #z
+                            [0,0], #R
+                            [0,0], #P
+                            [j_2x2[1,0],j_2x2[1,1]]]) #Y)
+        self._jacobian_inv = np.array([[j_2x2_inv[0,0],0,0,0,0, j_2x2_inv[0,1]],
+                            [j_2x2_inv[1,0],0,0,0,0, j_2x2_inv[1,1]]])
         
         if DEBUG:
             print("Jacobian computed:")
