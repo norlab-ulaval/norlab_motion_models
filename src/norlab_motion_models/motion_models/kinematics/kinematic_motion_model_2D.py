@@ -16,7 +16,7 @@ class KinematicMotionModel(MotionModel):
         self.name = "KinematicMotionModel"  # Name of the motion model
         self._jacobian_inv = None  # Inverse of the Jacobian matrix, if applicable
         self.control_input_frame = "body" # "body", "joints"
-
+        self.nb_group_state = 1 # Number of groups in the state, used for multi-group systems
     
     #def compute_jacobian(self):
     #    """
@@ -47,28 +47,35 @@ class KinematicMotionModel(MotionModel):
         #if dt.shape[0] != 1 or dt.shape[1] != self.speed_state.shape[1]:
         #    raise ValueError("Time step dt must be a vector with shape 1xcontrol_dim.")
         
-        print("initial_state", initial_state)
-        transform_i = np.array([[np.cos(initial_state[2, 0]), -np.sin(initial_state[2, 0]), initial_state[0,0]],
-                                     [np.sin(initial_state[2, 0]), np.cos(initial_state[2, 0]), initial_state[1,0]],
-                                     [0, 0, 1]])
+    
+        group_transform_i = []
+        for group in range(self.nb_group_state):
+            group_transform_i.append(np.array([[np.cos(initial_state[3*group+2, 0]), -np.sin(initial_state[3*group+2, 0]), initial_state[3*group,0]],
+                                                [np.sin(initial_state[3*group+2, 0]), np.cos(initial_state[3*group+2, 0]), initial_state[3*group+1,0]],
+                                                [0, 0, 1]]))
         #transform_i = np.eye(3)
         # Compute the position in the initial state frame
 
-        predicted_state = np.zeros((3,dt.shape[0]))  
-
+        predicted_state = np.zeros((3*self.nb_group_state,dt.shape[0]))  
+        
         for i in range(speed_state.shape[1]):
             
-            # Compute the change in state using the Jacobian
-            delta_state = speed_state[:,i] * dt
-            delta_lin = np.array([delta_state[0], delta_state[1], 1]).T
-            transform = np.array([[np.cos(delta_state[2]), -np.sin(delta_state[2]),0],
-                                  [np.sin(delta_state[2]), np.cos(delta_state[2]), 0],
-                                  [0, 0, 1]])
-            
-            predicted_state[:,i] = np.squeeze(transform_i @ delta_lin)
-            transform_i = transform_i @ transform
-            theta = np.arctan2(transform_i[1, i], transform_i[0, i])
-            predicted_state[2, i] = theta 
+            for state_group in range(self.nb_group_state):
+                transform_i = group_transform_i[state_group]
+                group_speed_state = speed_state[state_group*3:3*(state_group+1),i]  #initial_state[3*state_group:3*(state_group+1), 0]
+                # Compute the change in state using the Jacobian
+                delta_state = group_speed_state * dt
+                delta_lin = np.array([delta_state[0], delta_state[1], 1]).T
+                transform = np.array([[np.cos(delta_state[2]), -np.sin(delta_state[2]),0],
+                                      [np.sin(delta_state[2]), np.cos(delta_state[2]), 0],
+                                      [0, 0, 1]])
+
+                predicted_state[3*state_group:3*(state_group+1),i] = np.squeeze(transform_i @ delta_lin)
+                transform_i = transform_i @ transform
+                theta = np.arctan2(transform_i[1, i], transform_i[0, i])
+                
+                group_transform_i[state_group] = transform_i
+                predicted_state[3*state_group+2, i] = theta 
 
         return predicted_state
 

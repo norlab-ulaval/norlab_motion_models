@@ -23,7 +23,7 @@ with open("motion_model_vizualization/IDD_2D_params.yaml", "r") as f:
 # Initialize the robot model with parameters from YAML
 robot = IdealDiffDrive2D(params["robot_params"])
 # Initial state and command
-x_init = np.array([[0.0, 0.0, 0.0]]).T
+x_init = np.array([[0.0, 0.0, 0.0]*robot.nb_group_state]).T
 u_init = np.zeros(robot.input_dim)  # Use robot's input dimension
 x_current = x_init.copy()
 trajectory = x_current.copy()
@@ -35,8 +35,15 @@ print("IdealDiffDrive2D parameters:", params["robot_params"])
 fig, ax = plt.subplots()
 plt.subplots_adjust(left=0.1, bottom=0.25)
 fig.set_size_inches(fig_width, fig_height)
-trajectory_line, = ax.plot([], [], 'r-', label='trajectory')
-trajectory_points, = ax.plot([], [], 'ko', markersize=5, label='positions')
+
+trajectory_line_group = []
+trajectory_point_group = []
+for i in range(robot.nb_group_state):
+    trajectory_line, = ax.plot([], [], '-', label=f'trajectory group {i+1}')
+    trajectory_points, = ax.plot([], [], 'o', markersize=5, label=f'positions group {i+1}')
+    trajectory_line_group.append(trajectory_line)
+    trajectory_point_group.append(trajectory_points)
+
 
 import matplotlib.patches as patches
 
@@ -101,9 +108,14 @@ def on_key(event):
         print("x_current",x_current)
         trajectory=np.hstack((trajectory,x_current.copy()))
         traj_arr = trajectory
+        for i in range(robot.nb_group_state):
+            trajectory_line = trajectory_line_group[i]
+            trajectory_points = trajectory_point_group[i]
+            traj_arr = trajectory[3*i:3*i+2, :]
+            #
         trajectory_line.set_data(traj_arr[0,:], traj_arr[1,:])
         trajectory_points.set_data(traj_arr[0, :], traj_arr[1,:])
-        #print(trajectory)
+        
         draw_frame(ax, x_current)
         fig.canvas.draw_idle()
 
@@ -111,8 +123,12 @@ fig.canvas.mpl_connect('key_press_event', on_key)
 
 traj_arr = np.array(trajectory)
 print(traj_arr)
-trajectory_line.set_data(traj_arr[1, :], traj_arr[1, :])
-trajectory_points.set_data(traj_arr[1, :], traj_arr[1, :])
+for i in range(robot.nb_group_state):
+    trajectory_line = trajectory_line_group[i]
+    trajectory_points = trajectory_point_group[i]
+    trajectory_line.set_data(traj_arr[3*i, :], traj_arr[3*i+1, :])
+    trajectory_points.set_data(traj_arr[3*i, :], traj_arr[3*i+1, :])
+
 draw_frame(ax, x_current)
 
 plt.show()
