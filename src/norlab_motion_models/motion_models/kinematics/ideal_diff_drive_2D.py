@@ -6,8 +6,8 @@ class IdealDiffDrive2D(KinematicMotionModel):
     Ideal differential drive kinematic model in 2D.
     This model assumes a differential drive robot with two wheels and no slip.
     """
-    def __init__(self,params):
-
+    def __init__(self,params,verbose=True):
+        self.verbose= verbose
         super().__init__()
         self.name = "IdealDiffDrive2D"
         self.state_dim = 6  # [x, y, theta]
@@ -27,7 +27,7 @@ class IdealDiffDrive2D(KinematicMotionModel):
         
         self.load_params(params)
         self.compute_jacobian()
-
+        
     @property
     def wheel_radius(self): 
         return self._wheel_radius
@@ -105,7 +105,7 @@ class IdealDiffDrive2D(KinematicMotionModel):
         self._jacobian_inv = np.array([[j_2x2_inv[0,0],0,0,0,0, j_2x2_inv[0,1]],
                             [j_2x2_inv[1,0],0,0,0,0, j_2x2_inv[1,1]]])
         
-        if DEBUG:
+        if self.verbose:
             print("Jacobian computed:")
             print(self._jacobian)
             print("Jacobian inverse computed:")
@@ -115,14 +115,7 @@ class IdealDiffDrive2D(KinematicMotionModel):
             print("Effective base width:")
             print(self._effective_basewidth)
 
-    def load_params(self,params):
-        for key, value in params.items():
-            if key in self._param_list:
-                setattr(self, key, value)
-            else:
-                raise ValueError(f"Parameter '{key}' is not a valid parameter. Valid parameters are: {self._param_list}")
-
-        # Replace with your actual Jacobian computation
+    
         print(f"Recomputing Jacobian with:\n"
             f"  wheel_radius={self.wheel_radius}\n"
             f"  wheel_radius_gain={self.wheel_radius_gain}\n"

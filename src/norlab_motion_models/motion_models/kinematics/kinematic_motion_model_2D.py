@@ -124,7 +124,7 @@ class KinematicMotionModel(MotionModel):
 
         return self._jacobian @ joint_state
     
-    def compute_reverse_kinematics(self, end_effector_state):
+    def compute_inv_kinematics(self, end_effector_state):
         """ Compute reverse kinematics for a given end-effector state."""
         
         if self._jacobian is None:
@@ -135,13 +135,14 @@ class KinematicMotionModel(MotionModel):
         return self._jacobian.T @ end_effector_state
     
 
-    def load_param(self, yaml_path):
-        """
-        Load the kinematic motion model parameters from a YAML file.
-        """
-        raise NotImplementedError()
+    def load_params(self,params):
+        for key, value in params.items():
+            if key in self._param_list:
+                setattr(self, key, value)
+            else:
+                raise ValueError(f"Parameter '{key}' is not a valid parameter. Valid parameters are: {self._param_list}")
 
-    def safe_params(self):
+    def save_params(self):
         """
         Return a dictionary of safe parameters for the kinematic motion model.
         """

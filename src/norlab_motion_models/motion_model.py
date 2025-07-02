@@ -10,7 +10,7 @@ class MotionModel(abc.ABC):
     """
 
     @abc.abstractmethod
-    def load_param(self, yaml_path):
+    def load_params(self, yaml_path):
         """
         Load the motion model parameters from a YAML file.
 
@@ -19,7 +19,7 @@ class MotionModel(abc.ABC):
         raise NotImplementedError()
     
     @abc.abstractmethod
-    def safe_params(self):
+    def save_params(self):
         """
         Return a dictionary of safe parameters for the motion model.
         Safe parameters are those that can be used without risk of causing errors or unexpected behavior.
