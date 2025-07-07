@@ -1,7 +1,9 @@
 from typing import TypedDict
 from .kinematic_motion_model_2D import KinematicMotionModel
 import numpy as np
-DEBUG=True  # Set to True to enable debug prints
+
+DEBUG = True  # Set to True to enable debug prints
+
 
 class IdealDiffDrive2DParam(TypedDict):
     wheel_radius: float
@@ -15,8 +17,9 @@ class IdealDiffDrive2D(KinematicMotionModel):
     Ideal differential drive kinematic model in 2D.
     This model assumes a differential drive robot with two wheels and no slip.
     """
-    def __init__(self, params: IdealDiffDrive2DParam ,verbose=True):
-        self.verbose= verbose
+
+    def __init__(self, params: IdealDiffDrive2DParam, verbose=True):
+        self.verbose = verbose
         super().__init__()
         self.name = "IdealDiffDrive2D"
         self.state_dim = 9  # [x, y, theta]
@@ -31,32 +34,32 @@ class IdealDiffDrive2D(KinematicMotionModel):
         self._effective_wheel_radius = None
         self._effective_basewidth = None
         self._jacobian = None
-        
+
         self.load_params(params)
         self.compute_jacobian()
-        
+
     @property
-    def wheel_radius(self): 
+    def wheel_radius(self):
         return self._wheel_radius
 
     @wheel_radius.setter
     def wheel_radius(self, value):
         try:
-            assert 0.0 <value
+            assert 0.0 < value
         except AssertionError:
-            raise ValueError("Wheel radius must be greater than 0.0") 
+            raise ValueError("Wheel radius must be greater than 0.0")
         self._wheel_radius = value
         self.compute_jacobian()
 
     @property
     def wheel_radius_gain(self):
-        
+
         return self._wheel_radius_gain
 
     @wheel_radius_gain.setter
     def wheel_radius_gain(self, value):
         try:
-            assert 0.0 <value
+            assert 0.0 < value
         except AssertionError:
             raise ValueError("Wheel radius gain must be greater than 0.0")
         self._wheel_radius_gain = value
@@ -64,16 +67,16 @@ class IdealDiffDrive2D(KinematicMotionModel):
 
     @property
     def base_width(self):
-        
+
         return self._base_width
 
     @base_width.setter
     def base_width(self, value):
         try:
-            assert 0.0 <value
+            assert 0.0 < value
         except AssertionError:
             raise ValueError("Base width must be greater than 0.0")
-        
+
         self._base_width = value
         self.compute_jacobian()
 
@@ -84,27 +87,25 @@ class IdealDiffDrive2D(KinematicMotionModel):
     @base_width_gain.setter
     def base_width_gain(self, value):
         try:
-            assert 0.0 <value
+            assert 0.0 < value
         except AssertionError:
             raise ValueError("Base width gain must be greater than 0.0")
         self._base_width_gain = value
         self.compute_jacobian()
 
     def compute_jacobian(self):
-        
+
         # Dummy example calculation
         self._effective_basewidth = self._base_width * self._base_width_gain
         self._effective_wheel_radius = self._wheel_radius * self._wheel_radius_gain
 
-        j_2x2 =  self._effective_wheel_radius * np.array([[1/2, 1/2],
-                        [-1/(self._effective_basewidth), 1/(self._effective_basewidth)]])
+        j_2x2 = self._effective_wheel_radius * np.array(
+            [[1 / 2, 1 / 2], [-1 / (self._effective_basewidth), 1 / (self._effective_basewidth)]]
+        )
         j_2x2_inv = np.linalg.inv(j_2x2)
-        self._jacobian = np.array([[j_2x2[0,0],j_2x2[0,1]],
-                            [0,0], #y
-                            [j_2x2[1,0],j_2x2[1,1]]]) #Y)
-        self._jacobian_inv = np.array([[j_2x2_inv[0,0],0,j_2x2_inv[0,1]],
-                            [j_2x2_inv[1,0],0,j_2x2_inv[1,1]]])
-        
+        self._jacobian = np.array([[j_2x2[0, 0], j_2x2[0, 1]], [0, 0], [j_2x2[1, 0], j_2x2[1, 1]]])  # y  # Y)
+        self._jacobian_inv = np.array([[j_2x2_inv[0, 0], 0, j_2x2_inv[0, 1]], [j_2x2_inv[1, 0], 0, j_2x2_inv[1, 1]]])
+
         if self.verbose:
             print("Jacobian computed:")
             print(self._jacobian)
@@ -115,11 +116,10 @@ class IdealDiffDrive2D(KinematicMotionModel):
             print("Effective base width:")
             print(self._effective_basewidth)
 
-    
-        print(f"Recomputing Jacobian with:\n"
+        print(
+            f"Recomputing Jacobian with:\n"
             f"  wheel_radius={self.wheel_radius}\n"
             f"  wheel_radius_gain={self.wheel_radius_gain}\n"
             f"  base_width={self.base_width}\n"
-            f"  base_width_gain={self.base_width_gain}")
-
-
+            f"  base_width_gain={self.base_width_gain}"
+        )

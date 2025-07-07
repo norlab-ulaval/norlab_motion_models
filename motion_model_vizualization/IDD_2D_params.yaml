@@ -3,14 +3,13 @@ robot_params:
   base_width: 2.0
   wheel_radius_gain: 1.0
   base_width_gain: 1.0
-  
 
 simulation_params:
   dt: 1.0
   input_labels: # n to 0
     - "Right Wheel Speed (rad/s)"
     - "Left Wheel Speed (rad/s)"
-    
+
   input_limits:
     - [-10.0, 10.0]
     - [-10.0, 10.0]
