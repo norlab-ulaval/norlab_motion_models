@@ -99,7 +99,7 @@ def on_key(event):
     global x_current, trajectory
     if event.key == ' ':
         u = np.flip(np.array([[slider.val for slider in sliders]]).T)
-        dt = np.ones(1) * sim_params["dt"]
+        dt = np.array([np.ones(1) * sim_params["dt"]])
         #print(x_current)
         x_current[:] = robot.predict(x_current, u,dt)
         #print("x_current",x_current)

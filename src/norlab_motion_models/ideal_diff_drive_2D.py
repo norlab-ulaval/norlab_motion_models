@@ -1,12 +1,21 @@
+from typing import TypedDict
 from .kinematic_motion_model_2D import KinematicMotionModel
 import numpy as np
 DEBUG=True  # Set to True to enable debug prints
+
+class IdealDiffDrive2DParam(TypedDict):
+    wheel_radius: float
+    base_width: float
+    wheel_radius_gain: float
+    base_width_gain: float
+
+
 class IdealDiffDrive2D(KinematicMotionModel):
     """
     Ideal differential drive kinematic model in 2D.
     This model assumes a differential drive robot with two wheels and no slip.
     """
-    def __init__(self,params,verbose=True):
+    def __init__(self, params: IdealDiffDrive2DParam ,verbose=True):
         self.verbose= verbose
         super().__init__()
         self.name = "IdealDiffDrive2D"
@@ -14,7 +23,7 @@ class IdealDiffDrive2D(KinematicMotionModel):
         self.input_dim = 2  # [w_l, w_r] (left and right wheel speeds)
         self.control_input_frame = "joints"  # Control inputs are in the joint space (wheel speeds)
         self._maximum_param_value = 1000
-        self._param_list = ["wheel_radius", "base_width", "base_width_gain", "wheel_radius_gain"]
+        self._param_list = list(IdealDiffDrive2DParam.__required_keys__)
         self._wheel_radius = 0.1
         self._wheel_radius_gain = 1.0
         self._base_width = 0.5
@@ -26,10 +35,6 @@ class IdealDiffDrive2D(KinematicMotionModel):
         self.load_params(params)
         self.compute_jacobian()
         
-    @property
-    def wheel_radius(self): 
-        return self._wheel_radius
-
     @property
     def wheel_radius(self): 
         return self._wheel_radius

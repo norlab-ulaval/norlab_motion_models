@@ -6,7 +6,14 @@ import numpy as np
 State = np.ndarray
 """6x1 (x, y, z, RPY) state vector."""
 
+PredictedStates = np.ndarray
+"""9xN, N is the horizon in number of steps"""
+
 ControlInput = np.ndarray
+"""2xN, N is the horizon in number of steps"""
+
+DeltaTimeVector = np.ndarray
+"""1xN, N is the horizon in number of steps"""
 
 class KinematicMotionModel():
     """
@@ -17,12 +24,13 @@ class KinematicMotionModel():
     def __init__(self):
         
         self._jacobian = None  # Jacobian matrix for the kinematic model
-        self.state_dim = None  # Dimension of the state space
-        self.control_dim = None  # Dimension of the control input space
+        self.state_dim = 0  # Dimension of the state space
+        self.input_dim = 0  # Dimension of the control input space
         self.name = "KinematicMotionModel"  # Name of the motion model
         self._jacobian_inv = None  # Inverse of the Jacobian matrix, if applicable
         self.control_input_frame = "body" # "body", "joints"
         self.nb_group_state = 1 # Number of groups in the state, used for multi-group systems
+        self._param_list = []
     
     #def compute_jacobian(self):
     #    """
@@ -60,14 +68,14 @@ class KinematicMotionModel():
         transform_global[:2, 2] = initial_state[:2,0]
         
 
-        predicted_state = np.zeros((self.state_dim,dt.shape[0]))  
+        predicted_state = np.zeros((self.state_dim, dt.shape[1]))  
         
         for i in range(body_commands.shape[1]):
             
             
             command = body_commands[0:,i] 
             # Compute the change in state using the Jacobian
-            delta_state = command * dt
+            delta_state = command * dt[0, i]
             
             
             rotation= R.from_euler('z', delta_state[2], degrees=False)
@@ -83,7 +91,7 @@ class KinematicMotionModel():
         #print("predicted_state", predicted_state)
         return predicted_state
     
-    def predict(self, initial_state, control_input, dt):
+    def predict(self, initial_state: State, control_input: ControlInput, dt: DeltaTimeVector) -> PredictedStates:
         """Compute the next state based on the current state, control input, and time step.
         This method uses the Jacobian matrix to compute the change in state due to the control input.
         :param state assume a 3dof full state vector (x, y, theta, x_dot, y_dot, theta_dot, x_ddot, y_ddot, theta_ddot)
@@ -95,6 +103,20 @@ class KinematicMotionModel():
             control_input (_type_): _description_
             dt (_type_): _description_
         """
+        N = dt.shape[1]
+
+        initial_shape = (9,1)
+        if initial_state.shape != initial_shape:
+            raise ValueError(f"inital_state shape should be {initial_shape}, not {initial_state.shape}")
+
+        control_shape = (self.input_dim, N)
+        if control_input.shape != control_shape:
+            raise ValueError(f"control_input shape should be ({control_shape}), not {control_input.shape}")
+        
+        dt_shape = (1, N)
+        if dt.shape != dt_shape:
+            raise ValueError(f"dt shape should be ({dt_shape}), not {dt.shape}")
+
         if self.control_input_frame == "joints":
             ## Assuming the control input is in the joint_state
             speed_state = self.compute_fwd_kinematics( control_input) # 3xN command
