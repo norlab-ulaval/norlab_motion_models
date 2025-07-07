@@ -1,4 +1,4 @@
-from norlab_motion_models.motion_models.kinematics.kinematic_motion_model_2D import KinematicMotionModel
+from norlab_motion_models.kinematic_motion_model_2D import KinematicMotionModel
 import numpy as np
 DEBUG=True  # Set to True to enable debug prints
 class ArticulatedFrameSteering(KinematicMotionModel):

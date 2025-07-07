@@ -1,4 +1,4 @@
-from norlab_motion_models.motion_models.kinematics.kinematic_motion_model_2D import KinematicMotionModel
+from .kinematic_motion_model_2D import KinematicMotionModel
 import numpy as np
 DEBUG=True  # Set to True to enable debug prints
 class IdealDiffDrive2D(KinematicMotionModel):
@@ -10,13 +10,11 @@ class IdealDiffDrive2D(KinematicMotionModel):
         self.verbose= verbose
         super().__init__()
         self.name = "IdealDiffDrive2D"
-        self.state_dim = 6  # [x, y, theta]
+        self.state_dim = 9  # [x, y, theta]
         self.input_dim = 2  # [w_l, w_r] (left and right wheel speeds)
         self.control_input_frame = "joints"  # Control inputs are in the joint space (wheel speeds)
-        
         self._maximum_param_value = 1000
         self._param_list = ["wheel_radius", "base_width", "base_width_gain", "wheel_radius_gain"]
-        
         self._wheel_radius = 0.1
         self._wheel_radius_gain = 1.0
         self._base_width = 0.5
@@ -98,12 +96,9 @@ class IdealDiffDrive2D(KinematicMotionModel):
         j_2x2_inv = np.linalg.inv(j_2x2)
         self._jacobian = np.array([[j_2x2[0,0],j_2x2[0,1]],
                             [0,0], #y
-                            [0,0], #z
-                            [0,0], #R
-                            [0,0], #P
                             [j_2x2[1,0],j_2x2[1,1]]]) #Y)
-        self._jacobian_inv = np.array([[j_2x2_inv[0,0],0,0,0,0, j_2x2_inv[0,1]],
-                            [j_2x2_inv[1,0],0,0,0,0, j_2x2_inv[1,1]]])
+        self._jacobian_inv = np.array([[j_2x2_inv[0,0],0,j_2x2_inv[0,1]],
+                            [j_2x2_inv[1,0],0,j_2x2_inv[1,1]]])
         
         if self.verbose:
             print("Jacobian computed:")

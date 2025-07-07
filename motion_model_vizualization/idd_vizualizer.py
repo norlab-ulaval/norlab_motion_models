@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib.widgets import Slider
 import matplotlib.pyplot as plt
-from norlab_motion_models.motion_models.kinematics.ideal_diff_drive_2D import IdealDiffDrive2D 
+from norlab_motion_models.ideal_diff_drive_2D import IdealDiffDrive2D 
 import yaml
 
 LENGTH = 2
@@ -23,7 +23,7 @@ with open("motion_model_vizualization/IDD_2D_params.yaml", "r") as f:
 # Initialize the robot model with parameters from YAML
 robot = IdealDiffDrive2D(params["robot_params"])
 # Initial state and command
-x_init = np.array([[0.0, 0.0, 0.0,0.0,0.0,0.0]*robot.nb_group_state]).T
+x_init = np.array([[0.0]*9]).T
 u_init = np.zeros(robot.input_dim)  # Use robot's input dimension
 x_current = x_init.copy()
 trajectory = x_current.copy()
@@ -36,13 +36,10 @@ fig, ax = plt.subplots()
 plt.subplots_adjust(left=0.1, bottom=0.25)
 fig.set_size_inches(fig_width, fig_height)
 
-trajectory_line_group = []
-trajectory_point_group = []
-for i in range(robot.nb_group_state):
-    trajectory_line, = ax.plot([], [], '-', label=f'trajectory group {i+1}')
-    trajectory_points, = ax.plot([], [], 'o', markersize=5, label=f'positions group {i+1}')
-    trajectory_line_group.append(trajectory_line)
-    trajectory_point_group.append(trajectory_points)
+
+trajectory_line, = ax.plot([], [], '-', label=f'trajectory group {1}')
+trajectory_points, = ax.plot([], [], 'o', markersize=5, label=f'positions group {1}')
+
 
 
 import matplotlib.patches as patches
@@ -54,8 +51,8 @@ def draw_frame(ax, x, length=LENGTH):
     if hasattr(draw_frame, 'rect'):
         draw_frame.rect.remove()
     origin = x[:2]
-    theta = x[5]
-    print(x)
+    theta = x[2]
+    #print(x)
     x_axis = length * np.array([np.cos(theta), np.sin(theta)])
     y_axis = length * np.array([-np.sin(theta), np.cos(theta)])
     qx = ax.quiver(origin[0],origin[1], *x_axis, angles='xy', scale_units='xy', scale=1, color='r', width=0.01)
@@ -103,15 +100,13 @@ def on_key(event):
     if event.key == ' ':
         u = np.flip(np.array([[slider.val for slider in sliders]]).T)
         dt = np.ones(1) * sim_params["dt"]
-        print(x_current)
+        #print(x_current)
         x_current[:] = robot.predict(x_current, u,dt)
-        print("x_current",x_current)
+        #print("x_current",x_current)
         trajectory=np.hstack((trajectory,x_current.copy()))
         traj_arr = trajectory
-        for i in range(robot.nb_group_state):
-            trajectory_line = trajectory_line_group[i]
-            trajectory_points = trajectory_point_group[i]
-            traj_arr = trajectory[6*i:6*i+2, :]
+        
+        traj_arr = trajectory[0:2, :]
             #
         trajectory_line.set_data(traj_arr[0,:], traj_arr[1,:])
         trajectory_points.set_data(traj_arr[0, :], traj_arr[1,:])
@@ -123,11 +118,8 @@ fig.canvas.mpl_connect('key_press_event', on_key)
 
 traj_arr = np.array(trajectory)
 print(traj_arr)
-for i in range(robot.nb_group_state):
-    trajectory_line = trajectory_line_group[i]
-    trajectory_points = trajectory_point_group[i]
-    trajectory_line.set_data(traj_arr[6*i, :], traj_arr[6*i+1, :])
-    trajectory_points.set_data(traj_arr[6*i, :], traj_arr[6*i+1, :])
+trajectory_line.set_data(traj_arr[0, :], traj_arr[1, :])
+trajectory_points.set_data(traj_arr[0, :], traj_arr[1, :])
 
 draw_frame(ax, x_current)
 

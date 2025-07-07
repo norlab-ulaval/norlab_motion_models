@@ -1,8 +1,14 @@
-from ...motion_model import MotionModel
+
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 
-class KinematicMotionModel(MotionModel):
+# 
+State = np.ndarray
+"""6x1 (x, y, z, RPY) state vector."""
+
+ControlInput = np.ndarray
+
+class KinematicMotionModel():
     """
     Abstract base class for kinematic motion models.
     All kinematic motion models should inherit from this class and implement the `predict` method.
@@ -25,7 +31,7 @@ class KinematicMotionModel(MotionModel):
     #    """
     #    raise NotImplementedError("Subclasses must implement this method to define the Jacobian matrix.")
     
-    def integrate_position(self, initial_state, speed_state, dt):
+    def integrate_position(self, initial_state:State, body_commands, dt):
         """
         Integrate the position based on the current state, control input, and time step.
         Return the position in the initial state frame. 
@@ -34,7 +40,7 @@ class KinematicMotionModel(MotionModel):
         :param dt: Time step for the integration.
         :return: Updated state after applying the control input.
         """
-        
+        print("initial state",initial_state)
         if self._jacobian is None:
             raise ValueError("Jacobian matrix J is not initialized.")
         
@@ -42,51 +48,41 @@ class KinematicMotionModel(MotionModel):
             raise ValueError("Initial state dimension does not match the state dimension of the model.")
         
         
-        if speed_state.shape[0] != 6:
+        if body_commands.shape[0] != 3:
+            print("body_commands.shape", body_commands.shape)
             raise ValueError("Control input dimension does not match the control dimension of the model.")
 
-        #if dt.shape[0] != 1 or dt.shape[1] != self.speed_state.shape[1]:
-        #    raise ValueError("Time step dt must be a vector with shape 1xcontrol_dim.")
         
-    
-        group_transform_i = []
-        for group in range(self.nb_group_state):
-            rotation= R.from_euler('z', initial_state[6*group+5, 0], degrees=False)
-            transform = np.eye(4)
-            transform[:3, :3] = rotation.as_matrix()
-            transform[:3, 3] = initial_state[6*group:6*group+3, 0]
-            #transform_i = np.eye(3)
-            group_transform_i.append(transform)
-        #transform_i = np.eye(3)
-        # Compute the position in the initial state frame
+        
+        rotation= R.from_euler('z', initial_state[2,0], degrees=False)
+        transform_global = np.eye(3)
+        transform_global[:2, :2] = rotation.as_matrix()[:2, :2]
+        transform_global[:2, 2] = initial_state[:2,0]
+        
 
-        predicted_state = np.zeros((6*self.nb_group_state,dt.shape[0]))  
+        predicted_state = np.zeros((self.state_dim,dt.shape[0]))  
         
-        for i in range(speed_state.shape[1]):
+        for i in range(body_commands.shape[1]):
             
-            for state_group in range(self.nb_group_state):
-                transform_i = group_transform_i[state_group]
-                group_speed_state = speed_state[state_group*6:6*(state_group+1),i]  #initial_state[3*state_group:3*(state_group+1), 0]
-                # Compute the change in state using the Jacobian
-                delta_state = group_speed_state * dt
-                delta_lin = np.array([delta_state[0], delta_state[1],delta_state[2], 1]).T
-                
-                rotation= R.from_euler('z', delta_state[5], degrees=False)
-                transform = np.eye(4)
-                transform[:3, :3] = rotation.as_matrix()
-                angles = rotation.as_euler('xyz', degrees=False)
-                print(angles)
-                predicted_state[6*state_group+3:6*(state_group+1),i] = angles
-                predicted_state[6*state_group:6*(state_group+1)-3,i] = np.squeeze(transform_i @ delta_lin)[:3] # Add positions
-
-                transform_i = transform_i @ transform
-                theta = np.arctan2(transform_i[1, i], transform_i[0, i])
-                
-                group_transform_i[state_group] = transform_i
-                predicted_state[6*state_group+5, i] = theta 
-
+            
+            command = body_commands[0:,i] 
+            # Compute the change in state using the Jacobian
+            delta_state = command * dt
+            
+            
+            rotation= R.from_euler('z', delta_state[2], degrees=False)
+            transform_delta = np.eye(3)
+            transform_delta[:2, :2] = rotation.as_matrix()[:2,:2]
+            transform_delta[:2, 2] = delta_state[:2]  # Add positions
+            
+            transform_global = transform_global @ transform_delta
+            theta = np.arctan2(transform_global[1, 0], transform_global[0, 0])
+            
+            predicted_state[2, i] = theta 
+            predicted_state[:2, i] = transform_global[:2, 2]
+        #print("predicted_state", predicted_state)
         return predicted_state
-
+    
     def predict(self, initial_state, control_input, dt):
         """Compute the next state based on the current state, control input, and time step.
         This method uses the Jacobian matrix to compute the change in state due to the control input.
