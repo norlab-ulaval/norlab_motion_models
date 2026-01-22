@@ -1,9 +1,9 @@
 robot_params:
-  wheel_radius: 0.1
-  base_width: 2.0
+  wheel_radius: 0.1577
+  base_width: 0.558
   wheel_radius_gain: 1.0
   base_width_gain: 1.0
-
+  
 simulation_params:
   dt: 1.0
   input_labels: # n to 0
